@@ -87,16 +87,22 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('form').forEach(form => {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            var btn = form.querySelector('.btn');
+            const btn = form.querySelector('.btn');
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = '<span class="loading-spinner"></span> 鎻愪氦涓?..';
             }
                         const formData = new FormData(form);
-            var data = {}; for (var pair of formData.entries()) { data[pair[0]] = pair[1]; }
+            var data = {};
+            for (var eli = 0; eli < form.elements.length; eli++) {
+              var el = form.elements[eli];
+              if (el.name && el.type !== 'submit' && el.type !== 'button') {
+                data[el.name] = el.value;
+              }
+            }
 
             let endpoint = '/api/register';
-            var formId = form.id;
+            const formId = form.id;
             if (formId === 'trialForm') endpoint = '/api/trial';
             else if (formId === 'contactForm') endpoint = '/api/contact';
             if (form.getAttribute('action')) endpoint = form.getAttribute('action');
@@ -167,6 +173,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    console.log('CAAC form handler active'); console.log('CAAC 鑰冭瘉鎶ュ悕缃戠珯宸插姞杞?);
+    console.log('CAAC 鑰冭瘉鎶ュ悕缃戠珯宸插姞杞?);
 });
-
