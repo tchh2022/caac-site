@@ -101,9 +101,10 @@ function serveStatic(res, urlPath) {
     if (fs.existsSync(htmlPath)) filePath = htmlPath;
   }
 
-  // Handle admin page
-  if (urlPath === '/admin/' || urlPath === '/admin') {
-    filePath = path.join(__dirname, 'public', 'index.html');
+  // Handle admin files (login.html, index.html, etc.)
+  if (urlPath.startsWith('/admin')) {
+    const rest = urlPath.replace(/^\/admin\/?/, '') || 'index.html';
+    filePath = path.join(__dirname, 'public', rest);
   }
 
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {

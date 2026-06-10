@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 - CAAC无人机培训管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f0f2f5;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.login-box{background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.08);padding:40px;width:380px;max-width:90vw}
+.login-box h1{font-size:20px;color:#1a3c6e;text-align:center;margin-bottom:8px}
+.login-box p{font-size:13px;color:#999;text-align:center;margin-bottom:28px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:13px;color:#555;margin-bottom:6px;font-weight:600}
+.form-group input{width:100%;padding:11px 14px;border:1px solid #d1d8e0;border-radius:6px;font-size:14px;font-family:inherit;transition:border-color .2s}
+.form-group input:focus{outline:none;border-color:#1a3c6e;box-shadow:0 0 0 3px rgba(26,60,110,.1)}
+.btn{width:100%;padding:12px;background:#1a3c6e;color:#fff;border:none;border-radius:6px;font-size:15px;cursor:pointer;font-family:inherit;font-weight:600}
+.btn:hover{background:#154a7a}
+.error{color:#e74c3c;font-size:13px;text-align:center;margin-top:12px;display:none}
+.loading{display:none;text-align:center;color:#999;font-size:13px;margin-top:12px}
+.footer{text-align:center;margin-top:20px;font-size:12px;color:#bbb}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #ddd;border-top-color:#1a3c6e;border-radius:50%;animation:spin .6s linear infinite;margin-right:6px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="login-box">
+  <h1>CAAC 管理后台</h1>
+  <p>请登录以管理系统数据</p>
+  <div class="error" id="errorMsg"></div>
+  <form id="loginForm">
+    <div class="form-group">
+      <label for="username">用户名</label>
+      <input type="text" id="username" placeholder="请输入用户名" required autofocus>
+    </div>
+    <div class="form-group">
+      <label for="password">密码</label>
+      <input type="password" id="password" placeholder="请输入密码" required>
+    </div>
+    <button type="submit" class="btn" id="loginBtn">登 录</button>
+    <div class="loading" id="loading">
+      <span class="spinner"></span>登录中...
+    </div>
+  </form>
+  <div class="footer">CAAC无人机培训管理系统</div>
+</div>
+<script>
+const form = document.getElementById('loginForm');
+const username = document.getElementById('username');
+const password = document.getElementById('password');
+const errorMsg = document.getElementById('errorMsg');
+const loginBtn = document.getElementById('loginBtn');
+const loading = document.getElementById('loading');
+
+form.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  errorMsg.style.display = 'none';
+  loginBtn.style.display = 'none';
+  loading.style.display = 'block';
+
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: username.value, password: password.value })
+    });
+    const data = await res.json();
+    if (data.success && data.token) {
+      localStorage.setItem('admin_token', data.token);
+      window.location.href = '/admin/';
+    } else {
+      errorMsg.textContent = data.message || '登录失败';
+      errorMsg.style.display = 'block';
+      loginBtn.style.display = 'block';
+      loading.style.display = 'none';
+    }
+  } catch (err) {
+    errorMsg.textContent = '网络错误，请重试';
+    errorMsg.style.display = 'block';
+    loginBtn.style.display = 'block';
+    loading.style.display = 'none';
+  }
+});
+
+// Already logged in?
+if (localStorage.getItem('admin_token')) {
+  fetch('/api/admin/verify', {
+    headers: { 'Authorization': 'Bearer ' + localStorage.getItem('admin_token') }
+  }).then(function(r) {
+    if (r.ok) window.location.href = '/admin/';
+  }).catch(function() {});
+}
+</script>
+</body>
+</html>
