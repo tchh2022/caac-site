@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>免费体验课 - CAAC无人机考证培训中心</title>
     <link rel="stylesheet" href="../css/style.css">
+<script src="../js/regions.js"></script>
 </head>
 <body>
 <header class="header">
@@ -62,6 +63,25 @@
                         <label>预约日期</label>
                         <input type="date" name="date">
                     </div>
+                    <div class="form-group">
+                        <label>省 <span class="required">*</span></label>
+                        <select name="province" id="trialProvince" onchange="updateCities(this)" required>
+                            <option value="">-- 请选择省 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>市 <span class="required">*</span></label>
+                        <select name="city" id="trialCity" onchange="updateDistricts(this)" required>
+                            <option value="">-- 请选择市 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>区 <span class="required">*</span></label>
+                        <select name="district" id="trialDistrict" required>
+                            <option value="">-- 请选择区 --</option>
+                        </select>
+                    </div>
+
                     <div class="form-group">
                         <label>预约时段</label>
                         <select name="time">

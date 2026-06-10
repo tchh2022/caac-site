@@ -114,6 +114,21 @@ function init() {
   }
 
   migrate();
+function migrateSchema() {
+  var tables = ['registrations', 'trials', 'contacts'];
+  var cols = ['province', 'city', 'district'];
+  for (var t = 0; t < tables.length; t++) {
+    var table = tables[t];
+    var info = db.prepare('PRAGMA table_info(' + table + ')').all();
+    var existing = info.map(function(r) { return r.name; });
+    for (var c = 0; c < cols.length; c++) {
+      if (existing.indexOf(cols[c]) === -1) {
+        db.exec('ALTER TABLE ' + table + ' ADD COLUMN ' + cols[c] + ' TEXT');
+      }
+    }
+  }
+}
+  migrateSchema();
 }
 
 // ---- Collections API (same interface) ------------------------------------
