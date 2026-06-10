@@ -76,7 +76,8 @@ section { padding: 80px 0; }
 /* ===== Hero ===== */
 .hero {
     padding-top: 72px; min-height: 85vh;
-    background: linear-gradient(135deg,#0f2240 0%,#1a3c6e 40%,#2a5a9e 70%,#3a7abd 100%);
+    background: linear-gradient(135deg,rgba(15,34,64,0.92) 0%,rgba(26,60,110,0.85) 50%,rgba(42,90,158,0.78) 100%),
+                url(../images/hero-bg.jpg) center/cover no-repeat;
     display: flex; align-items: center; position: relative; overflow: hidden;
 }
 .hero::before {
@@ -175,9 +176,10 @@ section { padding: 80px 0; }
 .teacher-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
 .teacher-avatar {
     width: 96px; height: 96px; border-radius: 50%; margin: 0 auto 16px;
-    background: linear-gradient(135deg,#1a3c6e,#2a5a9e);
+    background-size: cover; background-position: center;
     display: flex; align-items: center; justify-content: center;
     color: #fff; font-size: 36px; font-weight: 700;
+    border: 3px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 .teacher-card h4 { font-size: 18px; color: #1a3c6e; margin-bottom: 4px; }
 .teacher-card .title { font-size: 14px; color: #e67e22; font-weight: 600; margin-bottom: 12px; }
@@ -221,9 +223,14 @@ section { padding: 80px 0; }
 }
 .case-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
 .case-img {
-    height: 200px; background: linear-gradient(135deg,#1a3c6e,#3a7abd);
-    display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 48px;
+    height: 200px; display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 48px; position: relative;
+    background-size: cover; background-position: center;
+}
+.case-img::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.2), transparent 50%);
+    pointer-events: none;
 }
 .case-body { padding: 20px 24px; background: #fff; }
 .case-body h4 { font-size: 16px; color: #1a3c6e; margin-bottom: 6px; }
@@ -336,9 +343,14 @@ section { padding: 80px 0; }
 .detail-sidebar { position: sticky; top: 100px; align-self: start; }
 .detail-hero-img {
     height: 320px; border-radius: 12px; margin-bottom: 32px;
-    background: linear-gradient(135deg,#1a3c6e,#3a7abd);
     display: flex; align-items: center; justify-content: center;
-    color: #fff; font-size: 64px;
+    color: #fff; font-size: 64px; position: relative;
+    background-size: cover; background-position: center;
+}
+.detail-hero-img::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.25), transparent 50%);
+    border-radius: 12px; pointer-events: none;
 }
 .detail-main h1 { font-size: 28px; color: #1a3c6e; margin-bottom: 16px; }
 .detail-meta { display: flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
