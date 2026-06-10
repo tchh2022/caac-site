@@ -1,131 +1,165 @@
-﻿const fs = require('fs');
+﻿const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-const DB_PATH = path.join(__dirname, 'data.json');
+const DB_PATH = path.join(__dirname, 'data.db');
+const JSON_PATH = path.join(__dirname, 'data.json');
+let db;
 
-// ---- Simple mutex for write safety ---------------------------------------
-let writeQueue = Promise.resolve();
-
-function withLock(fn) {
-  writeQueue = writeQueue.then(fn, fn);
-  return writeQueue;
-}
-
-// ---- Timestamp ------------------------------------------------------------
 function timestamp() {
-  const d = new Date();
-  const offset = d.getTime() + 8 * 3600000;
+  var d = new Date();
+  var offset = d.getTime() + 8 * 3600000;
   return new Date(offset).toISOString().replace('T', ' ').split('.')[0];
 }
 
-// ---- Atomic read / write --------------------------------------------------
-function readDB() {
-  try {
-    const raw = fs.readFileSync(DB_PATH, 'utf-8');
-    return JSON.parse(raw);
-  } catch (e) {
-    return null;
-  }
-}
+// ---- Schema ----------------------------------------------------------------
+var TABLES = {
+  registrations: [
+    'id INTEGER PRIMARY KEY AUTOINCREMENT',
+    'name TEXT NOT NULL', 'gender TEXT', 'phone TEXT NOT NULL',
+    'idcard TEXT', 'education TEXT', 'foundation TEXT',
+    'course TEXT NOT NULL', 'expected_date TEXT', 'notes TEXT',
+    "status TEXT NOT NULL DEFAULT 'pending'", 'created_at TEXT NOT NULL',
+  ].join(', '),
 
-function writeDB(data) {
-  const tmp = DB_PATH + '.tmp.' + process.pid;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2), 'utf-8');
-  fs.renameSync(tmp, DB_PATH);
-}
+  trials: [
+    'id INTEGER PRIMARY KEY AUTOINCREMENT',
+    'name TEXT NOT NULL', 'phone TEXT NOT NULL',
+    'date TEXT', 'time TEXT', 'interest TEXT', 'notes TEXT',
+    "status TEXT NOT NULL DEFAULT 'pending'", 'created_at TEXT NOT NULL",
+  ].join(', '),
 
-// ---- Collection helpers ---------------------------------------------------
-function getCollection(collection) {
-  const data = readDB();
-  return data ? data[collection] : null;
-}
+  contacts: [
+    'id INTEGER PRIMARY KEY AUTOINCREMENT',
+    'name TEXT NOT NULL', 'contact TEXT NOT NULL', 'message TEXT NOT NULL',
+    "status TEXT NOT NULL DEFAULT 'unread'", 'created_at TEXT NOT NULL",
+  ].join(', '),
 
-function saveCollection(collection, list) {
-  return withLock(function () {
-    const data = readDB() || { registrations: [], trials: [], contacts: [], courses: [] };
-    data[collection] = list;
-    writeDB(data);
-  });
-}
-
-// ---- Init: seed defaults --------------------------------------------------
-const DEFAULT = {
-  registrations: [],
-  trials: [],
-  contacts: [],
   courses: [
-    { name: '\u591A\u65CB\u7FFC\u89C6\u8DDD\u5185\u9A7E\u9A76\u5458', category: 'multirotor', duration: '20\u5929', price: '\u00A58,800', description: '\u96F6\u57FA\u7840\u53EF\u5B66' },
-    { name: '\u591A\u65CB\u7FFC\u8D85\u89C6\u8DDD\u9A7E\u9A76\u5458', category: 'multirotor', duration: '25\u5929', price: '\u00A512,800', description: '\u8D85\u89C6\u8DDD\u98DE\u884C' },
-    { name: '\u591A\u65CB\u7FFC\u6559\u5458\u6267\u7167', category: 'multirotor', duration: '30\u5929', price: '\u00A518,800', description: '\u6559\u5B66\u80FD\u529B\u57F9\u8BAD' },
-    { name: '\u56FA\u5B9A\u7FFC\u8D85\u89C6\u8DDD\u9A7E\u9A76\u5458', category: 'fixedwing', duration: '25\u5929', price: '\u00A514,800', description: '\u957F\u822A\u65F6\u98DE\u884C' },
-    { name: '\u56FA\u5B9A\u7FFC\u6559\u5458\u6267\u7167', category: 'fixedwing', duration: '35\u5929', price: '\u00A522,800', description: '\u6559\u5B66\u8D44\u8D28\u57F9\u8BAD' },
-    { name: '\u5782\u76F4\u8D77\u964D\u56FA\u5B9A\u7FFC\u8D85\u89C6\u8DDD', category: 'vtol', duration: '28\u5929', price: '\u00A516,800', description: '\u590D\u5408\u7FFC\u57F9\u8BAD' },
-    { name: '\u8003\u524D\u5F3A\u5316\u51B2\u523A\u73ED', category: 'instructor', duration: '5\u5929', price: '\u00A53,800', description: '\u8003\u524D\u5F3A\u5316' },
-    { name: '\u591A\u65CB\u7FFC\u5468\u672B\u73ED', category: 'multirotor', duration: '8\u5468', price: '\u00A59,800', description: '\u7075\u6D3B\u57F9\u8BAD' },
-  ]
+    'id INTEGER PRIMARY KEY AUTOINCREMENT',
+    'name TEXT NOT NULL', 'category TEXT NOT NULL',
+    'duration TEXT NOT NULL', 'price TEXT NOT NULL', 'description TEXT',
+  ].join(', '),
 };
 
-(function init() {
-  if (!fs.existsSync(DB_PATH)) {
-    writeDB(DEFAULT);
+var COURSES_SEED = [
+  { name: '多旋翼视距内驾驶员', category: 'multirotor', duration: '20天', price: '¥8,800', description: '零基础可学' },
+  { name: '多旋翼超视距驾驶员', category: 'multirotor', duration: '25天', price: '¥12,800', description: '超视距飞行' },
+  { name: '多旋翼教员执照', category: 'multirotor', duration: '30天', price: '¥18,800', description: '教学能力培训' },
+  { name: '固定翼超视距驾驶员', category: 'fixedwing', duration: '25天', price: '¥14,800', description: '长航时飞行' },
+  { name: '固定翼教员执照', category: 'fixedwing', duration: '35天', price: '¥22,800', description: '教学资质培训' },
+  { name: '垂直起降固定翼超视距', category: 'vtol', duration: '28天', price: '¥16,800', description: '复合翼培训' },
+  { name: '考前强化冲刺班', category: 'instructor', duration: '5天', price: '¥3,800', description: '考前强化' },
+  { name: '多旋翼周末班', category: 'multirotor', duration: '8周', price: '¥9,800', description: '灵活培训' },
+];
+
+// ---- Migrate from data.json ------------------------------------------------
+function migrate() {
+  if (!fs.existsSync(JSON_PATH)) return;
+
+  var raw;
+  try { raw = fs.readFileSync(JSON_PATH, 'utf-8'); } catch (e) { return; }
+  var oldData;
+  try { oldData = JSON.parse(raw); } catch (e) { return; }
+
+  var total = 0;
+
+  function copyTable(name, cols) {
+    var list = oldData[name];
+    if (!list || list.length === 0) return;
+    var ph = cols.map(function () { return '?'; }).join(', ');
+    var stmt = db.prepare('INSERT OR IGNORE INTO ' + name + ' (' + cols.join(', ') + ') VALUES (' + ph + ')');
+    var tx = db.transaction(function () {
+      for (var i = 0; i < list.length; i++) {
+        var row = list[i];
+        var vals = cols.map(function (c) { return row[c] !== undefined ? row[c] : null; });
+        stmt.run.apply(stmt, vals);
+      }
+    });
+    tx();
+    total += list.length;
   }
-})();
 
-// ---- Public API ------------------------------------------------------------
-const api = {
-  insert(collection, record) {
-    const list = getCollection(collection) || [];
-    const maxId = list.reduce(function (m, r) { return Math.max(m, r.id || 0); }, 0);
-    const now = timestamp();
-    const newRecord = { id: maxId + 1, ...record, created_at: now };
-    list.unshift(newRecord);
-    saveCollection(collection, list);
-    return newRecord;
+  copyTable('registrations', ['id', 'name', 'gender', 'phone', 'idcard', 'education', 'foundation', 'course', 'expected_date', 'notes', 'status', 'created_at']);
+  copyTable('trials', ['id', 'name', 'phone', 'date', 'time', 'interest', 'notes', 'status', 'created_at']);
+  copyTable('contacts', ['id', 'name', 'contact', 'message', 'status', 'created_at']);
+
+  try {
+    fs.renameSync(JSON_PATH, JSON_PATH + '.bak');
+    console.log('  => Migrated ' + total + ' records from data.json (backed up as data.json.bak)');
+  } catch (e) {
+    console.log('  => Migrated ' + total + ' records from data.json');
+  }
+}
+
+// ---- Init ----------------------------------------------------------------
+function init() {
+  db = new Database(DB_PATH);
+  db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
+
+  for (var name in TABLES) {
+    db.exec('CREATE TABLE IF NOT EXISTS ' + name + ' (' + TABLES[name] + ')');
+  }
+
+  var count = db.prepare('SELECT COUNT(*) AS c FROM courses').get();
+  if (count.c === 0) {
+    var stmt = db.prepare('INSERT INTO courses (name, category, duration, price, description) VALUES (@name, @category, @duration, @price, @description)');
+    var tx = db.transaction(function () {
+      for (var i = 0; i < COURSES_SEED.length; i++) {
+        stmt.run(COURSES_SEED[i]);
+      }
+    });
+    tx();
+  }
+
+  migrate();
+}
+
+// ---- Collections API (same interface) ------------------------------------
+var api = {
+  insert: function (collection, record) {
+    var cols = Object.keys(record);
+    var vals = Object.values(record);
+    var now = timestamp();
+    var q = cols.map(function () { return '?'; }).join(', ');
+    var stmt = db.prepare('INSERT INTO ' + collection + ' (' + cols.join(', ') + ', created_at) VALUES (' + q + ', ?)');
+    var result = stmt.run.apply(stmt, vals.concat([now]));
+    return { id: Number(result.lastInsertRowid), created_at: now };
   },
 
-  findAll(collection) {
-    return getCollection(collection) || [];
+  findAll: function (collection) {
+    return db.prepare('SELECT * FROM ' + collection + ' ORDER BY created_at DESC').all();
   },
 
-  findById(collection, id) {
-    const list = getCollection(collection);
-    if (!list) return null;
-    return list.find(function (r) { return r.id === Number(id); }) || null;
+  findById: function (collection, id) {
+    return db.prepare('SELECT * FROM ' + collection + ' WHERE id = ?').get(Number(id));
   },
 
-  update(collection, id, fields) {
-    const list = getCollection(collection);
-    if (!list) return null;
-    const idx = list.findIndex(function (r) { return r.id === Number(id); });
-    if (idx === -1) return null;
-    Object.assign(list[idx], fields);
-    saveCollection(collection, list);
-    return list[idx];
+  update: function (collection, id, fields) {
+    var cols = Object.keys(fields);
+    if (cols.length === 0) return null;
+    var vals = cols.map(function (c) { return fields[c]; });
+    var stmt = db.prepare('UPDATE ' + collection + ' SET ' + cols.map(function (c) { return c + ' = ?'; }).join(', ') + ' WHERE id = ?');
+    var result = stmt.run.apply(stmt, vals.concat([Number(id)]));
+    if (result.changes === 0) return null;
+    return this.findById(collection, id);
   },
 
-  delete(collection, id) {
-    const list = getCollection(collection);
-    if (!list) return false;
-    const idx = list.findIndex(function (r) { return r.id === Number(id); });
-    if (idx === -1) return false;
-    list.splice(idx, 1);
-    saveCollection(collection, list);
-    return true;
+  delete: function (collection, id) {
+    return db.prepare('DELETE FROM ' + collection + ' WHERE id = ?').run(Number(id)).changes > 0;
   },
 
-  count(collection, predicate) {
-    const list = getCollection(collection);
-    if (!list) return 0;
-    if (!predicate) return list.length;
-    return list.filter(predicate).length;
+  count: function (collection, predicate) {
+    if (!predicate) return db.prepare('SELECT COUNT(*) AS c FROM ' + collection).get().c;
+    return this.findAll(collection).filter(predicate).length;
   },
 
-  recent(collection, n) {
+  recent: function (collection, n) {
     if (n === undefined) n = 5;
-    const list = getCollection(collection);
-    if (!list) return [];
-    return list.slice(0, n);
+    return db.prepare('SELECT * FROM ' + collection + ' ORDER BY created_at DESC LIMIT ?').all(n);
   },
 };
 
+init();
 module.exports = api;
