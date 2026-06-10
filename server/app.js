@@ -147,7 +147,7 @@ const server = http.createServer(async (req, res) => {
     if (match) {
       try {
         const body = (req.method === 'POST' || req.method === 'PUT') ? await parseBody(req) : {};
-        const result = match.handler({ params: match.params, query: url.searchParams, body }, body);
+        const result = match.handler({ params: match.params, query: url.searchParams, body, headers: req.headers }, body);
         const status = result.status || 200;
         sendJSON(res, status, result.body);
       } catch (e) {
