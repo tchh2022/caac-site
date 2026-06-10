@@ -1,0 +1,11 @@
+﻿{
+  "name": "caac-server",
+  "version": "1.0.0",
+  "description": "CAAC无人机培训报名系统后端",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js"
+  },
+  "dependencies": {}
+}

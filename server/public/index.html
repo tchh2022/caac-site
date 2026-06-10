@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 - CAAC无人机培训</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:#f0f2f5;color:#333}
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;background:#1a3c6e;color:#fff;padding:24px 0}
+.sidebar h2{padding:0 20px 24px;font-size:18px;border-bottom:1px solid rgba(255,255,255,.1);margin-bottom:16px}
+.sidebar a{display:block;padding:12px 20px;color:rgba(255,255,255,.7);text-decoration:none;font-size:14px;cursor:pointer}
+.sidebar a:hover,.sidebar a.active{color:#fff;background:rgba(255,255,255,.08)}
+.main{flex:1;padding:24px 32px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.topbar h1{font-size:22px;color:#1a3c6e}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card .num{font-size:28px;font-weight:700;color:#1a3c6e}
+.card .label{font-size:13px;color:#888;margin-top:4px}
+.card .num.orange{color:#e67e22}
+.card .num.red{color:#e74c3c}
+.card .num.green{color:#27ae60}
+.section{margin-bottom:28px}
+.section h3{font-size:16px;color:#1a3c6e;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e8edf2}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+th{background:#f5f7fa;text-align:left;padding:12px 14px;font-size:13px;color:#555;font-weight:600}
+td{padding:10px 14px;font-size:13px;border-top:1px solid #f0f0f0}
+.badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600}
+.badge.pending{background:#fef9e7;color:#f39c12}
+.badge.read{background:#e8f8f0;color:#27ae60}
+.badge.unread{background:#fef0ef;color:#e74c3c}
+.tab-bar{display:flex;gap:0;margin-bottom:16px}
+.tab-bar button{padding:10px 24px;border:1px solid #d1d8e0;background:#fff;cursor:pointer;font-size:13px;font-family:inherit}
+.tab-bar button:first-child{border-radius:6px 0 0 6px}
+.tab-bar button:last-child{border-radius:0 6px 6px 0}
+.tab-bar button.active{background:#1a3c6e;color:#fff;border-color:#1a3c6e}
+table .actions button{padding:4px 10px;border-radius:4px;border:1px solid #e1e8ed;background:#fff;cursor:pointer;font-size:12px;margin:0 2px}
+table .actions button.del{border-color:#fef0ef;color:#e74c3c}
+table .actions button.del:hover{background:#fef0ef}
+</style>
+</head>
+<body>
+<div class="layout">
+  <div class="sidebar">
+    <h2>🛸 CAAC培训管理</h2>
+    <a class="active" onclick="switchTab('dashboard')">📊 仪表盘</a>
+    <a onclick="switchTab('registrations')">📋 报名管理</a>
+    <a onclick="switchTab('trials')">🎯 体验课预约</a>
+    <a onclick="switchTab('messages')">💬 留言管理</a>
+  </div>
+  <div class="main">
+    <div class="topbar">
+      <h1 id="pageTitle">仪表盘</h1>
+      <button onclick="location.reload()" style="padding:8px 16px;border:1px solid #d1d8e0;border-radius:6px;background:#fff;cursor:pointer">🔄 刷新</button>
+    </div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '/api';
+
+async function api(path, opts = {}) {
+  const r = await fetch(API_BASE + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  return r.json();
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+  document.querySelector(`.sidebar a[onclick*="${tab}"]`)?.classList.add('active');
+  if (tab === 'dashboard') renderDashboard();
+  else if (tab === 'registrations') renderRegistrations();
+  else if (tab === 'trials') renderTrials();
+  else if (tab === 'messages') renderMessages();
+  document.getElementById('pageTitle').textContent = {
+    dashboard: '仪表盘', registrations: '报名管理', trials: '体验课预约', messages: '留言管理'
+  }[tab];
+}
+
+async function renderDashboard() {
+  const d = await api('/admin/stats');
+  document.getElementById('content').innerHTML = `
+    <div class="cards">
+      <div class="card"><div class="num">${d.registrations}</div><div class="label">总报名数</div></div>
+      <div class="card"><div class="num orange">${d.pendingRegistrations}</div><div class="label">待处理报名</div></div>
+      <div class="card"><div class="num green">${d.trials}</div><div class="label">体验课预约</div></div>
+      <div class="card"><div class="num red">${d.unreadMessages}</div><div class="label">未读留言</div></div>
+    </div>
+    <div class="section"><h3>最近报名</h3>
+      <table><tr><th>姓名</th><th>课程</th><th>电话</th><th>状态</th><th>时间</th></tr>
+      ${d.recentRegistrations.map(r => `<tr><td>${r.name}</td><td>${r.course}</td><td>${r.phone}</td><td><span class="badge ${r.status}">${r.status === 'pending' ? '待处理' : '已处理'}</span></td><td>${r.created_at}</td></tr>`).join('')}
+      ${d.recentRegistrations.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:#888;padding:20px">暂无数据</td></tr>' : ''}
+    </table></div>
+    <div class="section"><h3>最近预约</h3>
+      <table><tr><th>姓名</th><th>电话</th><th>日期</th><th>时段</th><th>时间</th></tr>
+      ${d.recentTrials.map(r => `<tr><td>${r.name}</td><td>${r.phone}</td><td>${r.date||'-'}</td><td>${r.time||'-'}</td><td>${r.created_at}</td></tr>`).join('')}
+      ${d.recentTrials.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:#888;padding:20px">暂无数据</td></tr>' : ''}
+    </table></div>
+    <div class="section"><h3>最近留言</h3>
+      <table><tr><th>姓名</th><th>联系方式</th><th>内容</th><th>状态</th><th>时间</th></tr>
+      ${d.recentMessages.map(r => `<tr><td>${r.name}</td><td>${r.contact}</td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.message}</td><td><span class="badge ${r.status}">${r.status === 'unread' ? '未读' : '已读'}</span></td><td>${r.created_at}</td></tr>`).join('')}
+      ${d.recentMessages.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:#888;padding:20px">暂无数据</td></tr>' : ''}
+    </table></div>`;
+}
+
+async function renderRegistrations() {
+  const list = await api('/register');
+  const statusMap = { pending: '待处理', contacted: '已联系', enrolled: '已入学', completed: '已完成' };
+  document.getElementById('content').innerHTML = `
+    <div class="section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="border:none;margin:0;padding:0">全部报名 (${list.length})</h3>
+      </div>
+      <table>
+        <tr><th>ID</th><th>姓名</th><th>电话</th><th>课程</th><th>性别</th><th>学历</th><th>状态</th><th>日期</th><th>操作</th></tr>
+        ${list.map(r => `<tr>
+          <td>${r.id}</td><td>${r.name}</td><td>${r.phone}</td><td>${r.course}</td>
+          <td>${r.gender||'-'}</td><td>${r.education||'-'}</td>
+          <td><span class="badge ${r.status}">${statusMap[r.status]||r.status}</span></td>
+          <td>${r.created_at}</td>
+          <td class="actions">
+            <button onclick="updateStatus(${r.id},'contacted')" style="color:#1a3c6e">标记已联系</button>
+            <button class="del" onclick="deleteItem('registrations',${r.id})">删除</button>
+          </td>
+        </tr>`).join('')}
+        ${list.length === 0 ? '<tr><td colspan="9" style="text-align:center;color:#888;padding:20px">暂无报名数据</td></tr>' : ''}
+      </table>
+    </div>`;
+}
+
+async function updateStatus(id, status) {
+  await api('/register/' + id, { method: 'PUT', body: JSON.stringify({ status }) });
+  renderRegistrations();
+}
+
+async function deleteItem(type, id) {
+  if (!confirm('确定删除此记录？')) return;
+  await api('/admin/' + type + '/' + id, { method: 'DELETE' });
+  switchTab(type);
+}
+
+async function renderTrials() {
+  const list = await api('/trial');
+  document.getElementById('content').innerHTML = `
+    <div class="section"><h3>全部预约 (${list.length})</h3>
+      <table><tr><th>ID</th><th>姓名</th><th>电话</th><th>日期</th><th>时段</th><th>方向</th><th>时间</th><th>操作</th></tr>
+      ${list.map(r => `<tr>
+        <td>${r.id}</td><td>${r.name}</td><td>${r.phone}</td><td>${r.date||'-'}</td>
+        <td>${r.time||'-'}</td><td>${r.interest||'-'}</td><td>${r.created_at}</td>
+        <td class="actions"><button class="del" onclick="deleteItem('trials',${r.id})">删除</button></td>
+      </tr>`).join('')}
+      ${list.length === 0 ? '<tr><td colspan="8" style="text-align:center;color:#888;padding:20px">暂无预约数据</td></tr>' : ''}
+    </table></div>`;
+}
+
+async function renderMessages() {
+  const list = await api('/contact');
+  const statusMap = { unread: '未读', read: '已读' };
+  document.getElementById('content').innerHTML = `
+    <div class="section"><h3>全部留言 (${list.length})</h3>
+      <table><tr><th>ID</th><th>姓名</th><th>联系方式</th><th>留言内容</th><th>状态</th><th>时间</th><th>操作</th></tr>
+      ${list.map(r => `<tr>
+        <td>${r.id}</td><td>${r.name}</td><td>${r.contact}</td>
+        <td style="max-width:300px">${r.message}</td>
+        <td><span class="badge ${r.status}">${statusMap[r.status]||r.status}</span></td>
+        <td>${r.created_at}</td>
+        <td class="actions">
+          <button onclick="markRead(${r.id})" style="color:#1a3c6e">标为已读</button>
+          <button class="del" onclick="deleteItem('contacts',${r.id})">删除</button>
+        </td>
+      </tr>`).join('')}
+      ${list.length === 0 ? '<tr><td colspan="7" style="text-align:center;color:#888;padding:20px">暂无留言</td></tr>' : ''}
+    </table></div>`;
+}
+
+async function markRead(id) {
+  await api('/contact/' + id, { method: 'PUT', body: JSON.stringify({ status: 'read' }) });
+  renderMessages();
+}
+
+renderDashboard();
+</script>
+</body>
+</html>
