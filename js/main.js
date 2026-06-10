@@ -173,5 +173,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    console.log('CAAC 鑰冭瘉鎶ュ悕缃戠珯宸插姞杞?);
+    console.log('CAAC site ready');
 });
