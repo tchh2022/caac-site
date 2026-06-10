@@ -6,7 +6,6 @@ function registerRoutes(router) {
     if (!name || !phone || !course) {
       return { status: 400, body: { success: false, message: '姓名、手机号和课程为必填项' } };
     }
-    const { province, city, district } = body;
     db.insert('registrations', { name, gender, phone, idcard, education, foundation, course, expected_date, notes, province, city, district, status: 'pending' });
     return { body: { success: true, message: '报名提交成功！' } };
   });
