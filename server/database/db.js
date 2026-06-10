@@ -26,13 +26,13 @@ var TABLES = {
     'id INTEGER PRIMARY KEY AUTOINCREMENT',
     'name TEXT NOT NULL', 'phone TEXT NOT NULL',
     'date TEXT', 'time TEXT', 'interest TEXT', 'notes TEXT',
-    "status TEXT NOT NULL DEFAULT 'pending'", 'created_at TEXT NOT NULL",
+    "status TEXT NOT NULL DEFAULT 'pending'", 'created_at TEXT NOT NULL',
   ].join(', '),
 
   contacts: [
     'id INTEGER PRIMARY KEY AUTOINCREMENT',
     'name TEXT NOT NULL', 'contact TEXT NOT NULL', 'message TEXT NOT NULL',
-    "status TEXT NOT NULL DEFAULT 'unread'", 'created_at TEXT NOT NULL",
+    "status TEXT NOT NULL DEFAULT 'unread'", 'created_at TEXT NOT NULL',
   ].join(', '),
 
   courses: [
