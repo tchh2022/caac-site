@@ -1,4 +1,8 @@
 ﻿// ===== Shared Site Scripts =====
+// ---- Scroll to top on load ----
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
 
 // --- Mobile nav toggle ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -173,5 +177,58 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    console.log('CAAC site ready');
+
+    // --- Teacher carousel ---
+    var track = document.getElementById('carouselTrack');
+    if (track) {
+      var cards = track.querySelectorAll('.teacher-card');
+      var ctrl = document.querySelector('.slider-controls');
+      var timer;
+      function cardW() { return cards[0].offsetWidth + 30; }
+      function cpp() { return window.innerWidth >= 768 ? 3 : 1; }
+      var curPage = 0;
+      var totalPages = Math.ceil(cards.length / cpp());
+
+      function goToPage(p, anim) {
+        curPage = Math.max(0, Math.min(p, totalPages - 1));
+        track.scrollLeft = curPage * cpp() * cardW();
+        var ds = ctrl.querySelectorAll('.slider-dot');
+        for (var d = 0; d < ds.length; d++) ds[d].classList.toggle('active', d === curPage);
+      }
+
+      function nextP() { goToPage(curPage + 1, true); }
+      function prevP() { goToPage(curPage - 1, true); }
+      function startT() { clearInterval(timer); timer = setInterval(nextP, 4000); }
+      function stopT() { clearInterval(timer); }
+
+      function createDots() {
+        ctrl.innerHTML = '';
+        totalPages = Math.ceil(cards.length / cpp());
+        for (var d = 0; d < totalPages; d++) {
+          var dot = document.createElement('button');
+          dot.className = 'slider-dot' + (d === curPage ? ' active' : '');
+          dot.onclick = function(i) { return function() { goToPage(i, true); startT(); }; }(d);
+          ctrl.appendChild(dot);
+        }
+      }
+      createDots();
+
+      var pb = document.getElementById('carouselPrev');
+      var nb = document.getElementById('carouselNext');
+      if (pb) pb.onclick = function() { prevP(); startT(); };
+      if (nb) nb.onclick = function() { nextP(); startT(); };
+      track.onmouseenter = stopT;
+      track.onmouseleave = startT;
+
+      window.addEventListener('resize', function() {
+        var oldCpp = cpp();
+        if (oldCpp !== cpp()) { createDots(); goToPage(curPage, false); }
+      });
+
+      goToPage(0, false);
+      startT();
+    }
+    
     console.log('CAAC site ready');
 });
