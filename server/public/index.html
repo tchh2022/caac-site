@@ -140,7 +140,7 @@ async function renderRegistrations() {
   var statusMap = { pending: '待处理', contacted: '已联系', enrolled: '已入学', completed: '已完成' };
   var html = '<div class="section"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="border:none;margin:0;padding:0">全部报名 (' + list.length + ')</h3></div><table><tr><th>ID</th><th>姓名</th><th>电话</th><th>课程</th><th>性别</th><th>学历</th><th>状态</th><th>日期</th><th>操作</th></tr>';
   list.forEach(function(r) {
-    html += '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + r.phone + '</td><td>' + r.course + '</td><td>' + (r.gender || '-') + '</td><td>' + (r.education || '-') + '</td><td><span class="badge ' + r.status + '">' + (statusMap[r.status] || r.status) + '</span></td><td>' + r.created_at + '</td><td class="actions"><button onclick="updateStatus(' + r.id + ',\\'contacted\\')" style="color:#1a3c6e">标记已联系</button><button class="del" onclick="deleteItem(\\'registrations\\',' + r.id + ')">删除</button></td></tr>';
+    html += '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + r.phone + '</td><td>' + r.course + '</td><td>' + (r.gender || '-') + '</td><td>' + (r.education || '-') + '</td><td><span class="badge ' + r.status + '">' + (statusMap[r.status] || r.status) + '</span></td><td>' + r.created_at + '</td><td class="actions"><button onclick="updateStatus(' + r.id + ',\'contacted\')" style="color:#1a3c6e">标记已联系</button><button class="del" onclick="deleteItem(\'registrations\',' + r.id + ')">删除</button></td></tr>';
   });
   if (list.length === 0) html += '<tr><td colspan="9" style="text-align:center;color:#888;padding:20px">暂无报名数据</td></tr>';
   html += '</table></div>';
@@ -163,7 +163,7 @@ async function renderTrials() {
   var list = await api('/trial');
   var html = '<div class="section"><h3>全部预约 (' + list.length + ')</h3><table><tr><th>ID</th><th>姓名</th><th>电话</th><th>日期</th><th>时段</th><th>方向</th><th>时间</th><th>操作</th></tr>';
   list.forEach(function(r) {
-    html += '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + r.phone + '</td><td>' + (r.date || '-') + '</td><td>' + (r.time || '-') + '</td><td>' + (r.interest || '-') + '</td><td>' + r.created_at + '</td><td class="actions"><button class="del" onclick="deleteItem(\\'trials\\',' + r.id + ')">删除</button></td></tr>';
+    html += '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + r.phone + '</td><td>' + (r.date || '-') + '</td><td>' + (r.time || '-') + '</td><td>' + (r.interest || '-') + '</td><td>' + r.created_at + '</td><td class="actions"><button class="del" onclick="deleteItem(\'trials\',' + r.id + ')">删除</button></td></tr>';
   });
   if (list.length === 0) html += '<tr><td colspan="8" style="text-align:center;color:#888;padding:20px">暂无预约数据</td></tr>';
   html += '</table></div>';
@@ -175,7 +175,7 @@ async function renderMessages() {
   var statusMap = { unread: '未读', read: '已读' };
   var html = '<div class="section"><h3>全部留言 (' + list.length + ')</h3><table><tr><th>ID</th><th>姓名</th><th>联系方式</th><th>留言内容</th><th>状态</th><th>时间</th><th>操作</th></tr>';
   list.forEach(function(r) {
-    html += '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + r.contact + '</td><td style="max-width:300px">' + r.message + '</td><td><span class="badge ' + r.status + '">' + (statusMap[r.status] || r.status) + '</span></td><td>' + r.created_at + '</td><td class="actions"><button onclick="markRead(' + r.id + ')">标记已读</button><button class="del" onclick="deleteItem(\\'contacts\\',' + r.id + ')">删除</button></td></tr>';
+    html += '<tr><td>' + r.id + '</td><td>' + r.name + '</td><td>' + r.contact + '</td><td style="max-width:300px">' + r.message + '</td><td><span class="badge ' + r.status + '">' + (statusMap[r.status] || r.status) + '</span></td><td>' + r.created_at + '</td><td class="actions"><button onclick="markRead(' + r.id + ')">标记已读</button><button class="del" onclick="deleteItem(\'contacts\',' + r.id + ')">删除</button></td></tr>';
   });
   if (list.length === 0) html += '<tr><td colspan="7" style="text-align:center;color:#888;padding:20px">暂无留言</td></tr>';
   html += '</table></div>';
